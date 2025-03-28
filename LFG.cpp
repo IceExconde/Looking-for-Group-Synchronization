@@ -14,7 +14,7 @@
 using namespace std;
 
 // Function to get validated long integer input.
-// It reads a full line and ensures that the input is a valid whole number (only digits allowed).
+// It reads a full line and ensures that the input is a valid whole number.
 // If mustBePositive is true, the input must be > 0; otherwise, it must be >= 0.
 long getValidInput(const string& prompt, bool mustBePositive) {
     while (true) {
