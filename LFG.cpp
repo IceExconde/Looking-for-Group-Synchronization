@@ -13,10 +13,10 @@
 
 using namespace std;
 
-// Function to get validated integer input.
+// Function to get validated long integer input.
 // It reads a full line and ensures that the input is a valid whole number (only digits allowed).
 // If mustBePositive is true, the input must be > 0; otherwise, it must be >= 0.
-int getValidInput(const string& prompt, bool mustBePositive) {
+long getValidInput(const string& prompt, bool mustBePositive) {
     while (true) {
         cout << prompt;
         string input;
@@ -44,9 +44,9 @@ int getValidInput(const string& prompt, bool mustBePositive) {
             continue;
         }
 
-        // Convert string to integer.
+        // Convert string to long.
         try {
-            int value = stoi(input);
+            long value = stol(input);
             if (mustBePositive && value <= 0) {
                 cout << "Input must be a positive integer." << endl;
                 continue;
@@ -66,25 +66,25 @@ int getValidInput(const string& prompt, bool mustBePositive) {
 
 // Structure to keep track of each instance's state and statistics.
 struct Instance {
-    int id;
+    long id;
     bool active;
-    int partiesServed;
-    int totalTimeServed; // in seconds
+    long partiesServed;
+    long totalTimeServed; // in seconds
 };
 
 // Global shared data protected by a mutex.
 mutex mtx;
 condition_variable cv;
 // Queue holding the IDs of currently available instances.
-queue<int> availableInstances;
+queue<long> availableInstances;
 // Vector holding all instance information.
 vector<Instance> instances;
 
 // Function to simulate a party running a dungeon instance.
 // Each party thread waits until an instance is available,
 // then "runs" the dungeon (by sleeping a random time) and updates stats.
-void partyFunction(int partyId, int t1, int t2) {
-    int instanceId;
+void partyFunction(long partyId, long t1, long t2) {
+    long instanceId;
     {
         unique_lock<mutex> lock(mtx);
         // Wait until at least one instance is available.
@@ -98,8 +98,8 @@ void partyFunction(int partyId, int t1, int t2) {
     // Create a random duration between t1 and t2 seconds.
     random_device rd;
     mt19937 gen(rd());
-    uniform_int_distribution<> dis(t1, t2);
-    int runTime = dis(gen);
+    uniform_int_distribution<long> dis(t1, t2);
+    long runTime = dis(gen);
 
     // Simulate dungeon run.
     this_thread::sleep_for(chrono::seconds(runTime));
@@ -120,29 +120,30 @@ void partyFunction(int partyId, int t1, int t2) {
 
 int main() {
     // Input error handling.
-    int n = getValidInput("Enter maximum number of concurrent instances (n): ", true);
-    int tanks = getValidInput("Enter number of tank players: ", false);
-    int healers = getValidInput("Enter number of healer players: ", false);
-    int dps = getValidInput("Enter number of DPS players: ", false);
-    int t1 = getValidInput("Enter minimum dungeon run time (t1 in seconds): ", true);
+    long n = getValidInput("Enter maximum number of concurrent instances (n): ", true);
+    long tanks = getValidInput("Enter number of tank players: ", false);
+    long healers = getValidInput("Enter number of healer players: ", false);
+    long dps = getValidInput("Enter number of DPS players: ", false);
+    long t1 = getValidInput("Enter minimum dungeon run time (t1 in seconds): ", true);
 
-    int t2;
+    long t2;
     while (true) {
         t2 = getValidInput("Enter maximum dungeon run time (t2 in seconds): ", true);
         if (t2 < t1) {
-            cout << "Maximum dungeon run time must be greater than or equal to the minimum run time (" << t1 << " seconds).\n";
+            cout << "Maximum dungeon run time must be greater than or equal to the minimum run time ("
+                << t1 << " seconds).\n";
             continue;
         }
         break;
     }
 
-    // Calculate number of full parties that can be formed (each party needs 1 tank, 1 healer, 3 DPS).
-    int numParties = min({ tanks, healers, dps / 3 });
+    // Calculate number of full parties that can be formed.
+    long numParties = min({ tanks, healers, dps / 3 });
     cout << "\nNumber of parties that can be formed: " << numParties << "\n";
 
     // Initialize instance structures and the available instance queue.
     instances.resize(n);
-    for (int i = 0; i < n; i++) {
+    for (long i = 0; i < n; i++) {
         instances[i].id = i;
         instances[i].active = false;
         instances[i].partiesServed = 0;
@@ -152,7 +153,7 @@ int main() {
 
     // Launch party threads – one thread per party.
     vector<thread> partyThreads;
-    for (int i = 0; i < numParties; i++) {
+    for (long i = 0; i < numParties; i++) {
         partyThreads.push_back(thread(partyFunction, i + 1, t1, t2));
     }
 
@@ -189,11 +190,11 @@ int main() {
     }
 
     // Calculate and print remaining roles.
-    int remainingTanks = tanks - numParties;       // 1 tank used per party
-    int remainingHealers = healers - numParties;     // 1 healer used per party
-    int remainingDPS = dps - (numParties * 3);         // 3 DPS used per party
+    long remainingTanks = tanks - numParties;      
+    long remainingHealers = healers - numParties;    
+    long remainingDPS = dps - (numParties * 3);        
 
-    cout << "\nRemaining Roles:" << "\n";
+    cout << "\nDiscarded Roles:\n";
     cout << "Tanks: " << remainingTanks << "\n";
     cout << "Healers: " << remainingHealers << "\n";
     cout << "DPS: " << remainingDPS << "\n";
